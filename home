@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WoW Classic Cooldown Tracker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #1a1a1a;
+            color: #fff;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .character-section {
+            background-color: #2d2d2d;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 2px solid #444;
+        }
+        .character-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .character-name {
+            font-size: 1.4em;
+            font-weight: bold;
+            color: #ffd700;
+        }
+        .add-character-btn, .remove-character-btn, .add-cooldown-btn {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 14px;
+            margin-left: 5px;
+        }
+        .remove-character-btn {
+            background-color: #f44336;
+        }
+        .add-character-btn:hover, .add-cooldown-btn:hover {
+            background-color: #45a049;
+        }
+        .remove-character-btn:hover {
+            background-color: #da190b;
+        }
+        .cooldowns-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .cooldown-item {
+            background-color: #3d3d3d;
+            border-radius: 6px;
+            padding: 15px;
+            border: 1px solid #555;
+            position: relative;
+        }
+        .cooldown-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .cooldown-name {
+            font-weight: bold;
+            color: #87ceeb;
+        }
+        .cooldown-actions {
+            display: flex;
+            gap: 5px;
+        }
+        .reset-btn, .edit-btn, .remove-cooldown-btn {
+            border: none;
+            color: white;
+            padding: 4px 8px;
+            cursor: pointer;
+            border-radius: 3px;
+            font-size: 11px;
+        }
+        .reset-btn {
+            background-color: #ff6b6b;
+        }
+        .edit-btn {
+            background-color: #2196F3;
+        }
+        .remove-cooldown-btn {
+            background-color: #666;
+        }
+        .reset-btn:hover {
+            background-color: #ff5252;
+        }
+        .edit-btn:hover {
+            background-color: #1976D2;
+        }
+        .remove-cooldown-btn:hover {
+            background-color: #555;
+        }
+        .reset-btn:disabled {
+            background-color: #666;
+            cursor: not-allowed;
+        }
+        .cooldown-timer {
+            font-size: 1.1em;
+            font-weight: bold;
+            margin-bottom: 5px;
+            cursor: pointer;
+        }
+        .cooldown-ready {
+            color: #4CAF50;
+        }
+        .cooldown-active {
+            color: #ff9800;
+        }
+        .cooldown-bar {
+            width: 100%;
+            height: 10px;
+            background-color: #555;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        .cooldown-progress {
+            height: 100%;
+            background-color: #4CAF50;
+            transition: width 1s ease;
+        }
+        .cooldown-progress.active {
+            background-color: #ff9800;
+        }
+        .new-character-form, .add-cooldown-form {
+            background-color: #2d2d2d;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            border: 2px dashed #666;
+        }
+        .new-character-form input, .add-cooldown-form select {
+            padding: 8px;
+            margin-right: 10px;
+            border: 1px solid #555;
+            border-radius: 4px;
+            background-color: #444;
+            color: white;
+        }
+        .profession-tag {
+            background-color: #666;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 11px;
+            margin-bottom: 5px;
+            display: inline-block;
+        }
+        .edit-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .edit-modal-content {
+            background-color: #2d2d2d;
+            padding: 20px;
+            border-radius: 8px;
+            border: 2px solid #444;
+            max-width: 400px;
+            width: 90%;
+        }
+        .edit-modal input {
+            width: 60px;
+            padding: 5px;
+            margin: 0 5px;
+            border: 1px solid #555;
+            border-radius: 4px;
+            background-color: #444;
+            color: white;
+            text-align: center;
+        }
+        .edit-modal button {
+            margin: 10px 5px;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .save-btn {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .cancel-btn {
+            background-color: #666;
+            color: white;
+        }
+        .time-inputs {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 15px 0;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>WoW Classic Profession Cooldown Tracker</h1>
+        <p>Keep track of your profession cooldowns across all characters</p>
+    </div>
+
+    <div class="new-character-form">
+        <input type="text" id="newCharacterName" placeholder="Character Name" />
+        <button class="add-character-btn" onclick="addCharacter()">Add Character</button>
+    </div>
+
+    <div id="characters-container"></div>
+
+    <!-- Edit Modal -->
+    <div class="edit-modal" id="editModal">
+        <div class="edit-modal-content">
+            <h3>Edit Remaining Time</h3>
+            <p id="editModalTitle"></p>
+            <div class="time-inputs">
+                <input type="number" id="editDays" min="0" max="30" placeholder="0"> days
+                <input type="number" id="editHours" min="0" max="23" placeholder="0"> hours  
+                <input type="number" id="editMinutes" min="0" max="59" placeholder="0"> minutes
+                <input type="number" id="editSeconds" min="0" max="59" placeholder="0"> seconds
+            </div>
+            <div>
+                <button class="save-btn" onclick="saveEditedTime()">Save</button>
+                <button class="cancel-btn" onclick="closeEditModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Predefined cooldowns with precise timings
+        const COOLDOWNS = {
+            'Arcanite Bar': { duration: 92 * 60 * 60 * 1000, profession: 'Alchemy' }, // 3d 20h in milliseconds
+            'Mooncloth': { duration: 4 * 24 * 60 * 60 * 1000, profession: 'Tailoring' }, // 4 days
+            'Salt Shaker': { duration: 24 * 60 * 60 * 1000, profession: 'Engineering' }, // 1 day
+            'Transmute: Life to Earth': { duration: 24 * 60 * 60 * 1000, profession: 'Alchemy' },
+            'Transmute: Earth to Life': { duration: 24 * 60 * 60 * 1000, profession: 'Alchemy' },
+            'Transmute: Water to Air': { duration: 24 * 60 * 60 * 1000, profession: 'Alchemy' },
+            'Transmute: Air to Fire': { duration: 24 * 60 * 60 * 1000, profession: 'Alchemy' },
+            'Transmute: Fire to Earth': { duration: 24 * 60 * 60 * 1000, profession: 'Alchemy' },
+            'Transmute: Undeath to Water': { duration: 24 * 60 * 60 * 1000, profession: 'Alchemy' },
+            'Refined Deeprock Salt': { duration: 24 * 60 * 60 * 1000, profession: 'Engineering' },
+            'Stonescale Oil': { duration: 24 * 60 * 60 * 1000, profession: 'Alchemy' }
+        };
+
+        let characters = JSON.parse(localStorage.getItem('wowCooldownTracker') || '{}');
+        let editingCooldown = null;
+
+        function saveData() {
+            localStorage.setItem('wowCooldownTracker', JSON.stringify(characters));
+        }
+
+        function addCharacter() {
+            const nameInput = document.getElementById('newCharacterName');
+            const name = nameInput.value.trim();
+            
+            if (!name) {
+                alert('Please enter a character name');
+                return;
+            }
+            
+            if (characters[name]) {
+                alert('Character already exists');
+                return;
+            }
+
+            characters[name] = { cooldowns: {} };
+            
+            nameInput.value = '';
+            saveData();
+            renderCharacters();
+        }
+
+        function removeCharacter(characterName) {
+            if (confirm(`Are you sure you want to remove ${characterName}?`)) {
+                delete characters[characterName];
+                saveData();
+                renderCharacters();
+            }
+        }
+
+        function addCooldownToCharacter(characterName) {
+            const selectId = `cooldown-select-${characterName}`;
+            const select = document.getElementById(selectId);
+            const cooldownName = select.value;
+            
+            if (!cooldownName) return;
+            
+            if (characters[characterName].cooldowns[cooldownName]) {
+                alert('This cooldown is already added to this character');
+                return;
+            }
+
+            characters[characterName].cooldowns[cooldownName] = { completedAt: null };
+            select.value = '';
+            saveData();
+            renderCharacters();
+        }
+
+        function removeCooldownFromCharacter(characterName, cooldownName) {
+            if (confirm(`Remove ${cooldownName} from ${characterName}?`)) {
+                delete characters[characterName].cooldowns[cooldownName];
+                saveData();
+                renderCharacters();
+            }
+        }
+
+        function resetCooldown(characterName, cooldownName) {
+            const now = new Date().getTime();
+            characters[characterName].cooldowns[cooldownName].completedAt = now;
+            saveData();
+            renderCharacters();
+        }
+
+        function openEditModal(characterName, cooldownName) {
+            editingCooldown = { characterName, cooldownName };
+            
+            const cooldownData = COOLDOWNS[cooldownName];
+            const characterCooldown = characters[characterName].cooldowns[cooldownName];
+            const timeInfo = getRemainingTime(characterCooldown.completedAt, cooldownData.duration);
+            
+            document.getElementById('editModalTitle').textContent = `${characterName} - ${cooldownName}`;
+            
+            // Convert remaining milliseconds to days/hours/minutes/seconds
+            const remaining = timeInfo.remaining;
+            const days = Math.floor(remaining / (24 * 60 * 60 * 1000));
+            const hours = Math.floor((remaining % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
+            const minutes = Math.floor((remaining % (60 * 60 * 1000)) / (60 * 1000));
+            const seconds = Math.floor((remaining % (60 * 1000)) / 1000);
+            
+            document.getElementById('editDays').value = days;
+            document.getElementById('editHours').value = hours;
+            document.getElementById('editMinutes').value = minutes;
+            document.getElementById('editSeconds').value = seconds;
+            
+            document.getElementById('editModal').style.display = 'flex';
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').style.display = 'none';
+            editingCooldown = null;
+        }
+
+        function saveEditedTime() {
+            if (!editingCooldown) return;
+            
+            const days = parseInt(document.getElementById('editDays').value) || 0;
+            const hours = parseInt(document.getElementById('editHours').value) || 0;
+            const minutes = parseInt(document.getElementById('editMinutes').value) || 0;
+            const seconds = parseInt(document.getElementById('editSeconds').value) || 0;
+            
+            const totalMs = (days * 24 * 60 * 60 + hours * 60 * 60 + minutes * 60 + seconds) * 1000;
+            const now = new Date().getTime();
+            
+            // Set completedAt so that the remaining time equals the input
+            characters[editingCooldown.characterName].cooldowns[editingCooldown.cooldownName].completedAt = now - (COOLDOWNS[editingCooldown.cooldownName].duration - totalMs);
+            
+            saveData();
+            renderCharacters();
+            closeEditModal();
+        }
+
+        function getRemainingTime(completedAt, duration) {
+            if (!completedAt) return { ready: true, remaining: 0, progress: 100 };
+            
+            const now = new Date().getTime();
+            const elapsed = now - completedAt;
+            const remaining = Math.max(0, duration - elapsed);
+            const progress = Math.min(100, (elapsed / duration) * 100);
+            
+            return {
+                ready: remaining === 0,
+                remaining: remaining,
+                progress: progress
+            };
+        }
+
+        function formatTime(milliseconds) {
+            if (milliseconds === 0) return "Ready!";
+            
+            const days = Math.floor(milliseconds / (24 * 60 * 60 * 1000));
+            const hours = Math.floor((milliseconds % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
+            const minutes = Math.floor((milliseconds % (60 * 60 * 1000)) / (60 * 1000));
+            const seconds = Math.floor((milliseconds % (60 * 1000)) / 1000);
+            
+            let result = [];
+            if (days > 0) result.push(`${days}d`);
+            if (hours > 0) result.push(`${hours}h`);
+            if (minutes > 0) result.push(`${minutes}m`);
+            if (seconds > 0 && days === 0) result.push(`${seconds}s`);
+            
+            return result.join(' ') || '0s';
+        }
+
+        function getAvailableCooldowns(characterName) {
+            const characterCooldowns = Object.keys(characters[characterName].cooldowns || {});
+            return Object.keys(COOLDOWNS).filter(cooldown => !characterCooldowns.includes(cooldown));
+        }
+
+        function renderCharacters() {
+            const container = document.getElementById('characters-container');
+            container.innerHTML = '';
+
+            Object.keys(characters).forEach(characterName => {
+                const character = characters[characterName];
+                const characterDiv = document.createElement('div');
+                characterDiv.className = 'character-section';
+                
+                // Render existing cooldowns
+                const cooldownsHtml = Object.keys(character.cooldowns || {}).map(cooldownName => {
+                    const cooldownData = COOLDOWNS[cooldownName];
+                    const characterCooldown = character.cooldowns[cooldownName];
+                    const timeInfo = getRemainingTime(characterCooldown.completedAt, cooldownData.duration);
+                    
+                    return `
+                        <div class="cooldown-item">
+                            <div class="cooldown-header">
+                                <div>
+                                    <div class="cooldown-name">${cooldownName}</div>
+                                    <div class="profession-tag">${cooldownData.profession}</div>
+                                </div>
+                                <div class="cooldown-actions">
+                                    <button class="edit-btn" onclick="openEditModal('${characterName}', '${cooldownName}')">Edit</button>
+                                    <button class="reset-btn" onclick="resetCooldown('${characterName}', '${cooldownName}')" 
+                                            ${timeInfo.ready ? '' : 'disabled'}>
+                                        ${timeInfo.ready ? 'Use' : 'Reset'}
+                                    </button>
+                                    <button class="remove-cooldown-btn" onclick="removeCooldownFromCharacter('${characterName}', '${cooldownName}')">×</button>
+                                </div>
+                            </div>
+                            <div class="cooldown-timer ${timeInfo.ready ? 'cooldown-ready' : 'cooldown-active'}" 
+                                 onclick="openEditModal('${characterName}', '${cooldownName}')"
+                                 title="Click to edit remaining time">
+                                ${formatTime(timeInfo.remaining)}
+                            </div>
+                            <div class="cooldown-bar">
+                                <div class="cooldown-progress ${timeInfo.ready ? '' : 'active'}" 
+                                     style="width: ${timeInfo.progress}%"></div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                // Create dropdown for available cooldowns
+                const availableCooldowns = getAvailableCooldowns(characterName);
+                const cooldownOptions = availableCooldowns.map(cooldownName => 
+                    `<option value="${cooldownName}">${cooldownName} (${COOLDOWNS[cooldownName].profession})</option>`
+                ).join('');
+
+                characterDiv.innerHTML = `
+                    <div class="character-header">
+                        <div class="character-name">${characterName}</div>
+                        <button class="remove-character-btn" onclick="removeCharacter('${characterName}')">
+                            Remove Character
+                        </button>
+                    </div>
+                    ${Object.keys(character.cooldowns || {}).length > 0 ? `
+                        <div class="cooldowns-grid">
+                            ${cooldownsHtml}
+                        </div>
+                    ` : '<p style="color: #888; font-style: italic; margin-bottom: 15px;">No cooldowns added yet</p>'}
+                    ${availableCooldowns.length > 0 ? `
+                        <div class="add-cooldown-form">
+                            <select id="cooldown-select-${characterName}">
+                                <option value="">Select a cooldown to add...</option>
+                                ${cooldownOptions}
+                            </select>
+                            <button class="add-cooldown-btn" onclick="addCooldownToCharacter('${characterName}')">
+                                Add Cooldown
+                            </button>
+                        </div>
+                    ` : ''}
+                `;
+                
+                container.appendChild(characterDiv);
+            });
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('editModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeEditModal();
+            }
+        });
+
+        // Update timers every second
+        setInterval(renderCharacters, 1000);
+
+        // Initial render
+        renderCharacters();
+    </script>
+</body>
+</html>
