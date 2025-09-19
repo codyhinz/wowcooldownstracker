@@ -309,20 +309,28 @@
             
             if (characters[characterName].cooldowns[cooldownName]) {
                 alert('This cooldown is already added to this character');
+                select.value = '';
                 return;
             }
 
             characters[characterName].cooldowns[cooldownName] = { completedAt: null };
-            select.value = '';
             saveData();
-            renderCharacters();
+            
+            // Delay re-render to prevent dropdown flickering
+            setTimeout(() => {
+                renderCharacters();
+            }, 50);
         }
 
         function removeCooldownFromCharacter(characterName, cooldownName) {
             if (confirm(`Remove ${cooldownName} from ${characterName}?`)) {
                 delete characters[characterName].cooldowns[cooldownName];
                 saveData();
-                renderCharacters();
+                
+                // Delay re-render to prevent UI issues
+                setTimeout(() => {
+                    renderCharacters();
+                }, 50);
             }
         }
 
@@ -482,13 +490,10 @@
                     ` : '<p style="color: #888; font-style: italic; margin-bottom: 15px;">No cooldowns added yet</p>'}
                     ${availableCooldowns.length > 0 ? `
                         <div class="add-cooldown-form">
-                            <select id="cooldown-select-${characterName}">
+                            <select id="cooldown-select-${characterName}" onchange="addCooldownToCharacter('${characterName}')" onfocus="pauseUpdatesForDropdown()">
                                 <option value="">Select a cooldown to add...</option>
                                 ${cooldownOptions}
                             </select>
-                            <button class="add-cooldown-btn" onclick="addCooldownToCharacter('${characterName}')">
-                                Add Cooldown
-                            </button>
                         </div>
                     ` : ''}
                 `;
@@ -504,11 +509,28 @@
             }
         });
 
-        // Update timers every second
-        setInterval(renderCharacters, 1000);
+        // Update timers every second, but skip if dropdown is open
+        let updateInterval;
+        function startUpdates() {
+            updateInterval = setInterval(() => {
+                // Check if any dropdown is currently focused
+                const activeElement = document.activeElement;
+                if (activeElement && activeElement.tagName === 'SELECT') {
+                    return; // Skip update if dropdown is open
+                }
+                renderCharacters();
+            }, 1000);
+        }
 
-        // Initial render
+        // Stop updates temporarily when dropdown is interacted with
+        function pauseUpdatesForDropdown() {
+            clearInterval(updateInterval);
+            setTimeout(startUpdates, 2000); // Resume after 2 seconds
+        }
+
+        // Initial render and start updates
         renderCharacters();
+        startUpdates();
     </script>
 </body>
 </html>
