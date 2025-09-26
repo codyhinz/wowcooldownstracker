@@ -338,6 +338,12 @@
             renderCharacters();
         }
 
+        function setReady(characterName, cooldownName) {
+            characters[characterName].cooldowns[cooldownName].completedAt = null;
+            saveData();
+            renderCharacters();
+        }
+
         function openEditModal(characterName, cooldownName) {
             editingCooldown = { characterName, cooldownName };
             
@@ -447,6 +453,7 @@
                                 </div>
                                 <div class="cooldown-actions">
                                     <button class="edit-btn" onclick="openEditModal('${characterName}', '${cooldownName}')">Edit</button>
+                                    ${!timeInfo.ready ? `<button class="reset-btn" onclick="setReady('${characterName}', '${cooldownName}')" style="background-color: #4CAF50;">Ready</button>` : ''}
                                     <button class="reset-btn" onclick="resetCooldown('${characterName}', '${cooldownName}')">
                                         ${timeInfo.ready ? 'Use' : 'Reset'}
                                     </button>
